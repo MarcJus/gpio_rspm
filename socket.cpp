@@ -1,0 +1,76 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <iostream>
+#include <stdlib.h>
+#include <wiringPi.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "socket.h"
+
+#define RED_LED		5
+#define	GREEN_LED	12
+typedef int SOCKET;
+typedef struct sockaddr_in SOCKADDR_IN;
+typedef struct sockaddr SOCKADDR;
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+
+using namespace std;
+
+bool sendMessage(char message[], SOCKET sock, char* reply){
+	if(send(sock, message, strlen(message), 0) == SOCKET_ERROR){
+		return false;
+	}
+	cout << "Message envoyé : " << message << endl;
+	if(recv(sock, reply, 2000, 0) == SOCKET_ERROR){
+		return false;
+	}
+	cout << "Reponse : " << reply << endl;
+	
+	if(strstr(reply, "error") != NULL){
+		cout << "error" << endl;
+		return false;
+	}
+	return true;
+}
+
+int test(int argc, char* argv[]){
+
+	SOCKADDR_IN sin;
+	
+	sin.sin_addr.s_addr = inet_addr("192.168.0.11");
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(3000);
+	
+	char *message, reply[2000];
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+	
+	if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR){
+		cout << "Connexion réussie" << endl;
+	} else {
+		cout << "Connexion echouée" << endl;
+	}
+	
+	message = "4";
+		
+	int send = sendMessage(message, sock, reply);
+	delay(4000);
+	send = sendMessage(message, sock, reply);
+		
+	close(sock);
+	return 0;
+}
+
+SOCKADDR_IN getAddress(const char* host, int port){
+	SOCKADDR_IN sin;
+	sin.sin_addr.s_addr = inet_addr(host);
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(port);
+	return sin;
+}
+
+
