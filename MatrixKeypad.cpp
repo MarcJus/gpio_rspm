@@ -8,11 +8,14 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <algorithm>
 
 #include "socket.h"
 
 #define RED_LED 	21
 #define GREEN_LED	26
+#define REPLY_LENGHT	10
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 char keys[ROWS][COLS] = {  //key code
@@ -32,13 +35,22 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 using namespace std;
 
+bool get_ip(string config_file, string *ip);
+
 int main(int argc, char* argv[]){
     printf("Program is starting ... \n");
-    
+    string config_file = "config.conf";
+    string address;
+	if(!get_ip(config_file, &address)){
+		cerr << "Erreur lors de l'ouverture du fichier" << endl;
+		exit(EXIT_FAILURE);
+	}
+	
     wiringPiSetup();
     bool useLed = true;
     if(argc > 1){
-	if(argv[1] == "--no-led"){
+	if(argv[0] == "--no-led"){
+	    cout << "Use led : false" << endl;
 	    useLed = false;
 	}
     }
@@ -53,17 +65,17 @@ int main(int argc, char* argv[]){
         key = keypad.getKey();  //get the state of keys
         if (key){       //if a key is pressed, print out its key code
             printf("You Pressed key :  %c \n",key);
-	    SOCKADDR_IN sin = getAddress("192.168.0.11", 3000);
+	    SOCKADDR_IN sin = getAddress(address.c_str(), 3000);
 	    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	    if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR){
 		cout << "Connexion réussie" << endl;
 	    } else {
-		cout << "Connexion echouée" << endl;
+		cerr << "Connexion echouée à " << address << endl;
 		
 	    }
 	    
 	    char message[2] = {key, '\0'};
-	    char reply[2000];
+	    char reply[REPLY_LENGHT];
 		    
 	    bool send = sendMessage(message, sock, reply);
 	    if(useLed){
@@ -114,3 +126,23 @@ int main(int argc, char* argv[]){
     return 1;
 }
 
+bool get_ip(string config_file, string *ip){
+	fstream cFile(config_file);
+    if(cFile.is_open()){
+        string line;
+        while(getline(cFile, line)){
+            line.erase(remove_if(line.begin(), line.end(), ::isspace), line.end());
+            if(line[0] == '#' || line.empty())
+                continue;
+            auto delimiterPosition = line.find("=");
+            auto name = line.substr(0, delimiterPosition);
+            auto value = line.substr(delimiterPosition + 1);
+            if(name == "ip"){
+                *ip = value;
+            }
+        }
+    } else {
+        return false;
+    }
+    return true;
+}    

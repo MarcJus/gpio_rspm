@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <wiringPi.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "socket.h"
 
@@ -21,23 +20,38 @@ typedef struct sockaddr SOCKADDR;
 
 using namespace std;
 
-bool sendMessage(char message[], SOCKET sock, char* reply){
+/**
+ * Envoie un message et enregistre la reponse dans le dernier paramètre
+ * @param message Message à envoyer
+ * @param sock Socket
+ * @param reply Variable dans laquelle sera stockée la reponse
+ */
+bool sendMessage(char *message, SOCKET sock, char* reply){
 	if(send(sock, message, strlen(message), 0) == SOCKET_ERROR){
 		return false;
 	}
 	cout << "Message envoyé : " << message << endl;
-	if(recv(sock, reply, 2000, 0) == SOCKET_ERROR){
+	if(recv(sock, reply, 10, 0) == SOCKET_ERROR){
 		return false;
 	}
 	cout << "Reponse : " << reply << endl;
+	cout << "hexval : ";
+	for(const auto &item : string(reply)){
+		cout << hex << int(item);
+	}
+	cout << endl;
 	
 	if(strstr(reply, "error") != NULL){
 		cout << "error" << endl;
 		return false;
 	}
+	cout << endl << endl;
 	return true;
 }
 
+/**
+ * faux main
+ */
 int test(int argc, char* argv[]){
 
 	SOCKADDR_IN sin;
@@ -46,7 +60,7 @@ int test(int argc, char* argv[]){
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(3000);
 	
-	char *message, reply[2000];
+	char *message, reply[255];
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	
 	if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR){
