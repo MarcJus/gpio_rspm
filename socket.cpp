@@ -30,7 +30,7 @@ bool sendMessage(char *message, SOCKET sock, char* reply){
 	if(send(sock, message, strlen(message), 0) == SOCKET_ERROR){
 		return false;
 	}
-	string to_send = "raspberry_keypad\nenter-key\n"<< message
+	// string to_send += "raspberry_keypad\nenter-key\n"+message;
 	cout << "Message envoyé : " << message << endl;
 	if(recv(sock, reply, 10, 0) == SOCKET_ERROR){
 		return false;
