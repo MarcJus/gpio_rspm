@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <sstream>
 #include "functions.hpp"
 
 using std::cout; using std::endl; using std::string; using std::map;
@@ -8,7 +9,22 @@ string get_moyenne(string http_response){
 	return "Moyenne : "+http_response;
 }
 
+string nombre_devoirs(string http_response){
+	std::istringstream stream(http_response);
+	string line;
+	string devoirs;
+	while(std::getline(stream, line)){
+		devoirs = line;
+		break;
+	}
+	return devoirs+" devoirs";
+}
+
+/*
+ * Liste des fonctions pour chaque clé
+ */
 map<char, Callback> callbacks = {
+	{'5', nombre_devoirs},
 	{'8', get_moyenne}
 };
 
